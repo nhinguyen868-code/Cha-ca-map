@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bánh Mì Chả Cá Mập</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:#000;font-family:Arial,sans-serif;overflow:hidden}
+.wrap{position:relative;width:100%;height:100%;background:#000}
+video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+.overlay{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding:0 20px calc(32px + env(safe-area-inset-bottom));background:linear-gradient(transparent 58%,rgba(0,0,0,.72));pointer-events:none}
+.brand{color:#fff;font-weight:900;font-size:clamp(24px,7vw,38px);text-align:center;text-shadow:0 2px 10px #000;margin-bottom:10px}
+.sub{color:#fff;font-size:15px;margin-bottom:14px;text-align:center}
+.btn{display:block;width:min(92vw,390px);padding:16px 18px;border-radius:999px;background:#fff;color:#111;text-decoration:none;text-align:center;font-size:17px;font-weight:800;box-shadow:0 5px 24px rgba(0,0,0,.35);pointer-events:auto}
+.count{color:#ddd;font-size:12px;margin-top:10px;min-height:16px}
+.playGate{position:absolute;inset:0;z-index:10;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.50)}
+.playGate.show{display:flex}
+.playBox{text-align:center}
+.playBtn{border:0;border-radius:999px;padding:18px 26px;font-size:20px;font-weight:900;background:#fff;color:#111;box-shadow:0 8px 28px rgba(0,0,0,.4);cursor:pointer}
+.playText{margin-top:12px;color:#fff;font-size:14px;font-weight:700;text-shadow:0 2px 8px #000}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <video id="intro" autoplay muted playsinline webkit-playsinline preload="auto">
+    <source src="shark.mp4" type="video/mp4">
+  </video>
+
+  <div class="playGate" id="playGate">
+    <div class="playBox">
+      <button class="playBtn" id="playBtn" type="button">▶ CHẠM ĐỂ XEM 👀</button>
+      <div class="playText" id="playText">Nếu máy không tự chạy, chạm nút này nha 😆</div>
+    </div>
+  </div>
+
+  <div class="overlay">
+    <div class="brand">BÁNH MÌ CHẢ CÁ MẬP 🦈</div>
+    <div class="sub">Theo dõi tụi mình trên Facebook</div>
+    <a class="btn" href="https://www.facebook.com/profile.php?id=61593044167479">VÀO FACEBOOK NGAY</a>
+    <div class="count" id="count"></div>
+  </div>
+</div>
+
+<script>
+const fb = 'https://www.facebook.com/profile.php?id=61593044167479';
+const video = document.getElementById('intro');
+const gate = document.getElementById('playGate');
+const playBtn = document.getElementById('playBtn');
+const playText = document.getElementById('playText');
+const count = document.getElementById('count');
+let actuallyStarted = false;
+let redirectTimer = null;
+
+function showGate(msg){
+  gate.classList.add('show');
+  if (msg) playText.textContent = msg;
+}
+function hideGate(){ gate.classList.remove('show'); }
+
+function markStarted(){
+  if (actuallyStarted) return;
+  actuallyStarted = true;
+  hideGate();
+  count.textContent = '';
+}
+
+// Chỉ coi là "đã chạy" khi thời gian video thật sự nhích lên.
+video.addEventListener('timeupdate', () => {
+  if (video.currentTime > 0.08) markStarted();
+});
+
+video.addEventListener('playing', () => {
+  // playing có thể xảy ra khi vẫn đang buffer, nên timeupdate mới là kiểm tra chính.
+});
+
+video.addEventListener('ended', () => {
+  let left = 2;
+  count.textContent = `Tự chuyển sau ${left} giây…`;
+  redirectTimer = setInterval(() => {
+    left--;
+    if (left <= 0) {
+      clearInterval(redirectTimer);
+      window.location.href = fb;
+    } else {
+      count.textContent = `Tự chuyển sau ${left} giây…`;
+    }
+  }, 1000);
+});
+
+video.addEventListener('error', () => {
+  showGate('Video chưa tải được. Chạm để thử tải lại nha.');
+});
+
+async function forcePlayFromTap(){
+  playBtn.disabled = true;
+  playBtn.textContent = 'ĐANG MỞ…';
+  try {
+    video.muted = true;
+    if (video.readyState < 2) video.load();
+    await video.play();
+
+    setTimeout(() => {
+      if (video.currentTime <= 0.08) {
+        // Cho hiện controls thật nếu trình duyệt vẫn không chịu phát.
+        video.controls = true;
+        showGate('Máy này chặn phát tự động. Bấm nút ▶ trên video để xem nha.');
+      }
+    }, 1200);
+  } catch (e) {
+    video.controls = true;
+    showGate('Máy này chặn phát tự động. Bấm nút ▶ trên video để xem nha.');
+  } finally {
+    playBtn.disabled = false;
+    playBtn.textContent = '▶ CHẠM ĐỂ XEM 👀';
+  }
+}
+
+playBtn.addEventListener('click', forcePlayFromTap);
+
+// Thử autoplay.
+video.play().catch(() => {});
+
+// Không dựa vào video.paused nữa. Nếu sau 1,5 giây currentTime vẫn = 0 thì hiện nút.
+setTimeout(() => {
+  if (video.currentTime <= 0.08) {
+    showGate('Máy không tự chạy? Chạm đây để xem nha 😆');
+  }
+}, 1500);
+</script>
+</body>
+</html>
