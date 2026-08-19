@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bánh Mì Chả Cá Mập</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:#000;font-family:Arial,sans-serif;overflow:hidden}
+.wrap{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#000}
+video{width:100%;height:100%;object-fit:cover;background:#000}
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding:0 20px calc(32px + env(safe-area-inset-bottom));background:linear-gradient(transparent 58%,rgba(0,0,0,.72));pointer-events:none}
+.brand{color:#fff;font-weight:900;font-size:clamp(24px,7vw,38px);text-align:center;text-shadow:0 2px 10px #000;margin-bottom:10px}
+.sub{color:#fff;font-size:15px;margin-bottom:14px;text-align:center}
+.btn{display:block;width:min(92vw,390px);padding:16px 18px;border-radius:999px;background:#fff;color:#111;text-decoration:none;text-align:center;font-size:17px;font-weight:800;box-shadow:0 5px 24px rgba(0,0,0,.35);pointer-events:auto}
+.count{color:#ddd;font-size:12px;margin-top:10px;min-height:16px}
+.playGate{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.38);z-index:5}
+.playGate.show{display:flex}
+.playBtn{border:0;border-radius:999px;padding:18px 26px;font-size:20px;font-weight:900;background:#fff;color:#111;box-shadow:0 8px 28px rgba(0,0,0,.35);cursor:pointer}
+.hint{position:absolute;top:calc(18px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(92vw,420px);text-align:center;color:#fff;font-size:14px;font-weight:700;text-shadow:0 2px 8px #000;z-index:6;display:none}
+.hint.show{display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <video id="intro" autoplay muted playsinline webkit-playsinline preload="auto">
+    <source src="shark.mp4" type="video/mp4">
+  </video>
+
+  <div class="playGate" id="playGate">
+    <button class="playBtn" id="playBtn" type="button">▶ CHẠM ĐỂ XEM 👀</button>
+  </div>
+  <div class="hint" id="hint">Máy này không tự phát video — chạm nút để xem nha 😆</div>
+
+  <div class="overlay">
+    <div class="brand">BÁNH MÌ CHẢ CÁ MẬP 🦈</div>
+    <div class="sub">Theo dõi tụi mình trên Facebook</div>
+    <a class="btn" href="https://www.facebook.com/profile.php?id=61593044167479">VÀO FACEBOOK NGAY</a>
+    <div class="count" id="count"></div>
+  </div>
+</div>
+
+<script>
+const fb = 'https://www.facebook.com/profile.php?id=61593044167479';
+const video = document.getElementById('intro');
+const playGate = document.getElementById('playGate');
+const playBtn = document.getElementById('playBtn');
+const hint = document.getElementById('hint');
+const count = document.getElementById('count');
+
+let redirectStarted = false;
+let fallbackShown = false;
+
+function showFallback(){
+  if (fallbackShown || !video.paused) return;
+  fallbackShown = true;
+  playGate.classList.add('show');
+  hint.classList.add('show');
+}
+
+function hideFallback(){
+  playGate.classList.remove('show');
+  hint.classList.remove('show');
+}
+
+function startRedirectCountdown(){
+  if (redirectStarted) return;
+  redirectStarted = true;
+
+  let left = 6;
+  count.textContent = `Tự chuyển sau ${left} giây…`;
+
+  const timer = setInterval(() => {
+    left--;
+    if (left <= 0) {
+      clearInterval(timer);
+      window.location.href = fb;
+    } else {
+      count.textContent = `Tự chuyển sau ${left} giây…`;
+    }
+  }, 1000);
+}
+
+async function tryPlay(){
+  try {
+    await video.play();
+    hideFallback();
+  } catch (err) {
+    showFallback();
+  }
+}
+
+playBtn.addEventListener('click', async () => {
+  try {
+    video.muted = true;
+    await video.play();
+    hideFallback();
+  } catch (err) {
+    playBtn.textContent = 'BẤM LẠI ĐỂ XEM ▶';
+  }
+});
+
+video.addEventListener('playing', () => {
+  hideFallback();
+  startRedirectCountdown();
+}, { once:true });
+
+video.addEventListener('error', () => {
+  showFallback();
+  hint.textContent = 'Video chưa tải được trên máy này — thử mở lại bằng Safari nha.';
+});
+
+// Thử autoplay ngay khi trang mở.
+tryPlay();
+
+// Nếu sau 1,2 giây video vẫn chưa chạy thì hiện nút bấm.
+setTimeout(() => {
+  if (video.paused) showFallback();
+}, 1200);
+</script>
+</body>
+</html>
